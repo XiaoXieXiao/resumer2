@@ -264,11 +264,11 @@ class ResumeGenerator:
         personal_eng = self.get_data('data/data-eng.json')
 
         if self.language == "pt":
-            self.create_resume(personal_pt)  # Pass the file path
+            return self.create_resume(personal_pt)  # Pass the file path
         elif self.language == "eng":
-            self.create_resume(personal_eng)  # Pass the file path
+            return self.create_resume(personal_eng)  # Pass the file path
         else:
-            print("Invalid language")
+            return print("Invalid language")
 
 
 if __name__ == '__main__':
