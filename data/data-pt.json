@@ -1,0 +1,20 @@
+{
+  "lang": "pt",
+  "nome": "SEU NOME",
+  "estadoCivil": "ESTADO CIVIL",
+  "idade": 23,
+  "contato": {
+    "email": "SEU@EMAIL.com",
+    "telefone": "SEU NÚMERO"
+  },
+  "endereco": "SEU ENDERÇO COMPLETO",
+  "formacao": "ESCOLARIDADE",
+  "habilidades": ["COLOQUE", "AQUI","11", "HABILIDADES", "SUAS", "A", "B", "C", "D", "E", "F"],
+  "experiencia": {
+    "empresa": "NOME DA EMPRESA EM QUE TRABALHOU",
+    "cargo": "SEU CARGO",
+    "periodo": "START DATE/COMPLETION DATE OR CURRENT",
+    "atividades": "NOME DA SUA ATIVIDADE",
+    "descricao": "DESCRIÇÃO DA ATIVIDADE"
+  }
+}

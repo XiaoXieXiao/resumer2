@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Curriculum</title>
+    <style>
+        body {{
+            width: 21cm;
+      		height: 29.7cm;
+      		margin: 0 auto;
+      		padding: 2cm 0 0 2cm;
+            font-family: Calibri, sans-serif;
+        }}
+        h1 {{
+            margin-top: 0;
+      		text-align: center;
+      		font-size: 12pt;
+        }}
+        .contact-info {{
+            margin-bottom: 20px;
+        }}
+        .section {{
+            margin-bottom: 20px;
+      		font-size: 11pt;
+        }}
+        .section-title {{
+            font-weight: bold;
+      		font-size: 11pt;
+            margin-bottom: 10px;
+        }}
+        .list {{
+            margin-left: 20px;
+        }}
+        .job-description {{
+            margin-left: 20px;
+        }}
+     	 hr {{
+      		border: 0;
+      		border-top: 3px solid #000;
+      		margin: 10px 0;
+    }}
+    </style>
+</head>
+<body>
+
+    <h1>{nome}</h1>
+    <div class="contact-info">
+        <p>{estadoCivil}, {idade} anos</p>
+        <p>E-mail: {contato.email} – Telefone: {contato.telefone}</p>
+        <p>Endereço: {endereco}</p>
+    </div>
+
+    <div class="section">
+        <div class="section-title">OBJETIVO</div>
+      	<hr>
+        <p>{objetivo}</p>
+    </div>
+
+    <div class="section">
+        <div class="section-title">FORMAÇÃO ACADÊMICA</div>
+      	<hr>
+        <ul class="list">
+            <li>{formacao}</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <div class="section-title">CURSOS E QUALIFICAÇÕES</div>
+      	<hr>
+        <ul class="list">
+            <li>{habilidades[0]}</li>
+            <li>{habilidades[1]}</li>
+            <li>{habilidades[2]}</li>
+            <li>{habilidades[3]}</li>
+            <li>{habilidades[4]}</li>
+            <li>{habilidades[5]}</li>
+            <li>{habilidades[6]}</li>
+            <li>{habilidades[7]}</li>
+            <li>{habilidades[8]}</li>
+            <li>{habilidades[9]}</li>
+            <li>{habilidades[10]}</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <div class="section-title">CARACTERÍSTICAS PESSOAIS</div>
+      	<hr>
+        <p>✔ {pessoais}</p>
+    </div>
+
+    <div class="section">
+        <div class="section-title">RESUMO DAS QUALIFICAÇÕES</div>
+      	<hr>
+        <p>{resumo}</p>
+    </div>
+
+    <div class="section">
+        <div class="section-title">EXPERIÊNCIAS e EMPRESAS</div>
+      	<hr>
+        <div class="job">
+            <p><strong>Nome da empresa:</strong> {experiencia.empresa}</p>
+            <p><strong>Cargo:</strong> {experiencia.cargo}</p>
+            <p><strong>Data de início/ Término:</strong> {experiencia.periodo}</p>
+            <p><strong>Atividades desenvolvidas:</strong></p>
+            <div class="job-description">
+                <p>{experiencia.atividades}</p>
+                <ul class="list">
+                    <li>{experiencia.descricao}</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

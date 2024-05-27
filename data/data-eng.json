@@ -1,0 +1,20 @@
+{
+  "lang": "eng",
+  "nome": "YOUR NAME",
+  "estadoCivil": "MARITAL STATUS",
+  "idade": 18,
+  "contato": {
+    "email": "YOUR@EMAIL.com",
+    "telefone": "YOUR NUMBER"
+  },
+  "endereco": "YOUR FULL ADDRESS",
+  "formacao": "YOUR EDUCATION LEVEL",
+  "habilidades": ["INPUT", "11","SKILLS", "IN", "THESE", "PLACEHOLDERS", "A", "B", "C", "D", "E"],
+  "experiencia": {
+    "empresa": "COMPANY NAME",
+    "cargo": "POSITION",
+    "periodo": "START YEAR/LAST YEAR OR CURRENT WORKING",
+    "atividades": "ACTIVITIES",
+    "descricao": "DESCRIPTION"
+  }
+}
