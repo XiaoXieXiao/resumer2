@@ -2,6 +2,7 @@ import json
 import pdfkit
 import google.generativeai as genai
 from google.api_core.exceptions import ResourceExhausted
+import time
 
 
 class ResumeGenerator:
@@ -104,46 +105,38 @@ class ResumeGenerator:
                 html_template = html_template.replace(f"{{{key}}}", str(value))
         return html_template
 
-    def create_template(self, data_pt=None, data_eng=None):
+    def create_template(self, data=None):
         """
         Fills templates with available JSON data, leaving unfilled placeholders.
 
         Args:
-            data_pt: Data in the Portuguese language.
-            data_eng: Data in the English language.
+            data: Data in the language you want your resume (data-eng/data-pt).
 
         Returns:
             Filled HTML templates, with available data replaced in their respective languages, and remaining placeholder
             untouched.
         """
-        datas = [data_pt, data_eng]
-        templates = []
+        template = f"template-{self.language}.html"
 
-        for data in datas:
-            if 'pt' in str(data):
-                lang = 'pt'
-            elif 'eng' in str(data):
-                lang = 'eng'
-            else:
-                lang = 'Unknown'
+        if data is not None:
+            with open(f"template/{template}", "r", encoding='utf-8') as f:
+                html_template = f.read()
+            lang_filled = self.fill_template(html_template, data)
+            print(f'{self.language} template created')
+        else:
+            print('No template was created')
+            return
 
-            template = f"template-{lang}.html"
+        return lang_filled
 
-            if data is not None:
-                with open(f"template/{template}", "r", encoding='utf-8') as f:
-                    html_template = f.read()
-                lang_filled = self.fill_template(html_template, data)
-                templates.append(lang_filled)
-        return templates
-
-    def create_resume(self, personal, prompt_file):
+    def create_resume(self, data):
         """
         Generates a resume based on user input and data.
 
         Args:
-            personal: Personal data dictionary.
-            prompt_file: Path to the JSON file containing the prompt parts.
+            data: Personal data dictionary.
         """
+        # Training AI with prompts with input and output
         job = input("Titulo da vaga | Job tittle: ")
         description = input("Descrição da vaga | Job description: ")
         # objectives, personal characteristics, qualifications
@@ -171,7 +164,7 @@ class ResumeGenerator:
 
         input_job = "input: " + job
         input_description = "DESCRICAO: " + description  # DESCRICAO = DESCRIPTION
-        input_personal = "PESSOAL: " + str(personal)  # PESSOAL = PERSONAL
+        input_personal = "PESSOAL: " + str(data)  # PESSOAL = PERSONAL
         input_fields = "CAMPOS: " + fields  # CAMPOS = FIELDS
         output_string = "output: "
 
@@ -179,76 +172,89 @@ class ResumeGenerator:
         for input_i in inputs:
             prompt_parts.append(input_i)
 
-        try:
-            response = self.chat.send_message(prompt_parts)
-        except ResourceExhausted:
-            print("Google API request limit reached. Please try again later.")
-            return
+        able_to_split = False
+        error_count = 0
 
-        response_text = response.text
+        while not able_to_split | error_count > 5:
+            try:  # Try to split the message
+                try:  # You can run out of quota, this will handle it
+                    # Using AI for blank fields in the resume
+                    response = self.chat.send_message(prompt_parts)
+                    time.sleep(30)
+                except ResourceExhausted:
+                    print("Google API request limit reached. Please try again later.")
+                    return
 
-        # Split the text based on double newlines, assuming each section is separated by them
-        sections = response_text.split("\n\n")
+                response_text = response.text
+                # Split the text based on double newlines, assuming each section is separated by them
+                objectives_pt = response_text.split(":", 1)[1].strip()
+                characteristics_pt = response_text.split(":", 1)[1].strip()
+                qualifications_pt = response_text.split(":", 1)[1].strip()
 
-        # Assign each section to a variable
-        objectives_pt, characteristics_pt, qualifications_pt = sections
+                data = {
+                    "objetivo": objectives_pt,  # objetivo = objectie
+                    "pessoais": characteristics_pt,  # pessoais = personal
+                    "resumo": qualifications_pt,  # resumo = summary
+                }
+            except ValueError:
+                error_count += 1
+            else:
+                able_to_split = True
 
-        objectives_pt = objectives_pt.split(":", 1)[1].strip()
-        characteristics_pt = characteristics_pt.split(":", 1)[1].strip()
-        qualifications_pt = qualifications_pt.split(":", 1)[1].strip()
+        if not able_to_split:
+            return print("Too many attempts of splitting the message ")
 
-        data = {
-            "objetivo": objectives_pt,  # objetivo = objectie
-            "pessoais": characteristics_pt,  # pessoais = personal
-            "resumo": qualifications_pt,  # resumo = summary
-        }
+        if self.language == "pt":
+            # Read the HTML template from a file
+            html_template = self.create_template(data)
 
-        # Read the HTML template from a file
-        with open("template/template-pt.html", "r", encoding='utf-8') as f:
-            html_template = f.read()
+            # Fill the template with data and print the result
+            filled_html = self.fill_template(html_template, data)
 
-        # Fill the template with data and print the result
-        filled_html = self.fill_template(html_template, data)
+            # Convert HTML to PDF
+            pdfkit.from_string(filled_html, 'output-pt.pdf')  # You can change 'output.pdf' to your desired filename
+            return print("pt resume created successfully!")
 
-        # Convert HTML to PDF
-        pdfkit.from_string(filled_html, 'output.pdf')  # You can change 'output.pdf' to your desired filename
+        elif self.language == "eng":
+            objective = ""
+            caracteristics = ""
+            qualifications = ""
 
-        objective = ""
-        caracteristics = ""
-        qualifications = ""
+            answers = [objectives_pt, characteristics_pt, qualifications_pt]
+            answers_eng = [objective, caracteristics, qualifications]
+            # Translate to english without changing the format, only translate
+            prompt = "Traduza para inglês sem mudar o formato, apenas traduza "
 
-        answers = [objectives_pt, characteristics_pt, qualifications_pt]
-        answers_eng = [objective, caracteristics, qualifications]
-        # Translate to english without changing the format, only translate
-        prompt = "Traduza para inglês sem mudar o formato, apenas traduza "
+            for i in answers:
+                k = 0
+                try:  # You can run out of quota, this will handle it
+                    answer_text = self.chat.send_message(prompt + i)
+                    time.sleep(30)
 
-        for i in answers:
-            k = 0
-            try:
-                answer_text = self.chat.send_message(prompt + i)
-            except ResourceExhausted:
-                print("Google API request limit reached. Please try again later.")
-                return
-            answers_eng[k] = answer_text.text
-            k += 1
+                except ResourceExhausted:
+                    print("Google API request limit reached. Please try again later.")
+                    return
+                answers_eng[k] = answer_text.text
+                k += 1
 
-        data_eng = {
-            "objective": objective,
-            "pessoais": caracteristics,
-            "resumo": qualifications,
-        }
+            data_eng = {
+                "objective": objective,
+                "pessoais": caracteristics,
+                "resumo": qualifications,
+            }
 
-        # Read the HTML template from a file
-        with open("template/template-eng.html", "r", encoding='utf-8') as f:
-            html_template = f.read()
+            # Read the HTML template from a file
+            html_template = self.create_template(data)
 
-        # Fill the template with data and print the result
-        filled_html = self.fill_template(html_template, data_eng)
+            # Fill the template with data and print the result
+            filled_html = self.fill_template(html_template, data_eng)
 
-        # Convert HTML to PDF
-        pdfkit.from_string(filled_html, 'output-eng.pdf')  # You can change 'output.pdf' to your desired filename
+            # Convert HTML to PDF
+            pdfkit.from_string(filled_html, 'output-eng.pdf')  # You can change 'output.pdf' to your desired filename
+            return print("eng resume created successfully!")
 
-        return print("Resumes created successfully!")
+        else:
+            return print("Invalid language. Please enter 'pt' or 'eng'.")
 
     def generate_resumes(self):
         """
@@ -257,14 +263,10 @@ class ResumeGenerator:
         personal_pt = self.get_data('data/data-pt.json')
         personal_eng = self.get_data('data/data-eng.json')
 
-        self.create_template(personal_pt, personal_eng)
-
         if self.language == "pt":
-            prompt = self.get_data('data/prompt-parts.json')
-            self.create_resume(personal_pt, prompt)  # Pass the file path
+            self.create_resume(personal_pt)  # Pass the file path
         elif self.language == "eng":
-            prompt = self.get_data('data/prompt-parts.json')
-            self.create_resume(personal_eng, prompt)  # Pass the file path
+            self.create_resume(personal_eng)  # Pass the file path
         else:
             print("Invalid language")
 
