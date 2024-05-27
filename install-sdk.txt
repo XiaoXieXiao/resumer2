@@ -1,7 +1,0 @@
-Install the SDK
-The Python SDK for the Gemini API is contained in the [`google-generativeai`]
-(https://pypi.org/project/google-generativeai/) package. Install the dependency using pip:
-
-pip install wkhtmltopdf
-pip install -q -U google-generativeai
-pip install pdfkit
