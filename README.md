@@ -42,15 +42,15 @@ resumer2 is a Python-based tool for generating resumes in either Portuguese or E
     ```bash
     python resumer2.py
     ```
-2. Follow the prompts to input the job title, job description, and desired language.
+2. Follow the prompts to input the desired language, job title and job description.
 
 ## Example
 
-When you run the script, you will be prompted to enter the job title, job description, and the desired language for the resume. For example:
+When you run the script, you will be prompted to enter the desired language for the resume, job title and job description. For example:
 
-Enter the job title: Software Engineer
-Enter the job description: Develop and maintain software applications.
-Enter the language (en for English, pt for Portuguese): en
+Enter the language (en for English, pt for Portuguese): en <br>
+Enter the job title: Software Engineer <br>
+Enter the job description: Develop and maintain software applications. 
 
 ## Contributing
 
