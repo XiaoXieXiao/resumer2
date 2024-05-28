@@ -68,20 +68,6 @@ class ResumeGenerator:
             json_data = json.load(f)
         return json_data
 
-    def get_api_key(self):
-        """
-        Retrieves the API key from the secrets file.
-
-        Returns:
-            The API key if found, otherwise None.
-        """
-        try:
-            secrets = self.get_data(self.secrets_file)
-            return secrets['api-key']
-        except (FileNotFoundError, KeyError):
-            print("Error: API key not found in 'secret.json'. Please check the file.")
-            return None
-
     @staticmethod
     def fill_template(html_template, data):
         """
@@ -105,6 +91,46 @@ class ResumeGenerator:
                 html_template = html_template.replace(f"{{{key}}}", str(value))
         return html_template
 
+    @staticmethod
+    def text_strip(text: str, title: list):
+        i = 0
+
+        content = title
+        while i < len(content):
+            if title[i] in text:
+                text = text.split(":", 1)[1].strip()
+                if i == len(content) - 1:
+                    content[i] = text
+                else:
+                    strip_holder = text.split(":", 1)[0].strip()
+                    if "#" in strip_holder:
+                        try:
+                            content[i] = strip_holder.split("#", 1)[0]
+                        except IndexError:
+                            content[i] = strip_holder.split(f"{title[i + 1]}", 1)[0]
+                    else:
+                        content[i] = strip_holder.split(f"{title[i + 1]}", 1)[0]
+            else:
+                return print(f'{title[i]} no in the text')
+
+            i += 1
+
+        return content
+
+    def get_api_key(self):
+        """
+        Retrieves the API key from the secrets file.
+
+        Returns:
+            The API key if found, otherwise None.
+        """
+        try:
+            secrets = self.get_data(self.secrets_file)
+            return secrets['api-key']
+        except (FileNotFoundError, KeyError):
+            print("Error: API key not found in 'secret.json'. Please check the file.")
+            return None
+
     def create_template(self, data=None):
         """
         Fills templates with available JSON data, leaving unfilled placeholders.
@@ -123,28 +149,26 @@ class ResumeGenerator:
                 html_template = f.read()
             lang_filled = self.fill_template(html_template, data)
             print(f'{self.language} template created')
+            return lang_filled
         else:
             print('No template was created')
             return
 
-        return lang_filled
-
-    def create_resume(self, data):
+    def create_resume(self, personal_data):
         """
         Generates a resume based on user input and data.
 
         Args:
-            data: Personal data dictionary.
+            personal_data: Personal data dictionary.
         """
         # Training AI with prompts with input and output
         job = input("Titulo da vaga | Job tittle: ")
         description = input("Descrição da vaga | Job description: ")
         # objectives, personal characteristics, qualifications
-        fields = "Objetivo; Características Pessoais; Resumo das qualificações;"
+        fields = "Objetivo; Características Pessoais; Resumo das qualificações; (sem estilizadores)"
 
         # Load prompt_parts from the file
         prompt_parts = []  # This line is now correct!
-
         prompts = self.get_data('data/prompt-parts.json')
 
         for prompt in prompts:
@@ -164,7 +188,7 @@ class ResumeGenerator:
 
         input_job = "input: " + job
         input_description = "DESCRICAO: " + description  # DESCRICAO = DESCRIPTION
-        input_personal = "PESSOAL: " + str(data)  # PESSOAL = PERSONAL
+        input_personal = "PESSOAL: " + str(personal_data)  # PESSOAL = PERSONAL
         input_fields = "CAMPOS: " + fields  # CAMPOS = FIELDS
         output_string = "output: "
 
@@ -172,42 +196,29 @@ class ResumeGenerator:
         for input_i in inputs:
             prompt_parts.append(input_i)
 
-        able_to_split = False
-        error_count = 0
+        try:  # You can run out of quota, this will handle it
+            # Using AI for blank fields in the resume
+            response = self.chat.send_message(prompt_parts)
+            time.sleep(60)
+        except ResourceExhausted:
+            print("Google API request limit reached. Please try again later.")
+            return
 
-        while not able_to_split | error_count > 5:
-            try:  # Try to split the message
-                try:  # You can run out of quota, this will handle it
-                    # Using AI for blank fields in the resume
-                    response = self.chat.send_message(prompt_parts)
-                    time.sleep(30)
-                except ResourceExhausted:
-                    print("Google API request limit reached. Please try again later.")
-                    return
+        response_text = response.text
+        titles = ['Objetivo', 'Características Pessoais', 'Resumo das qualificações']
 
-                response_text = response.text
-                # Split the text based on double newlines, assuming each section is separated by them
-                objectives_pt = response_text.split(":", 1)[1].strip()
-                characteristics_pt = response_text.split(":", 1)[1].strip()
-                qualifications_pt = response_text.split(":", 1)[1].strip()
+        striped = self.text_strip(response_text, titles)
+        objectives_pt, characteristics_pt, qualifications_pt = striped
 
-                data = {
-                    "objetivo": objectives_pt,  # objetivo = objectie
-                    "pessoais": characteristics_pt,  # pessoais = personal
-                    "resumo": qualifications_pt,  # resumo = summary
-                }
-            except ValueError:
-                error_count += 1
-            else:
-                able_to_split = True
-
-        if not able_to_split:
-            return print("Too many attempts of splitting the message ")
+        data = {
+            "objetivo": objectives_pt,  # objetivo = objectie
+            "pessoais": characteristics_pt,  # pessoais = personal
+            "resumo": qualifications_pt,  # resumo = summary
+        }
 
         if self.language == "pt":
             # Read the HTML template from a file
-            html_template = self.create_template(data)
-
+            html_template = self.create_template(personal_data)
             # Fill the template with data and print the result
             filled_html = self.fill_template(html_template, data)
 
@@ -229,7 +240,7 @@ class ResumeGenerator:
                 k = 0
                 try:  # You can run out of quota, this will handle it
                     answer_text = self.chat.send_message(prompt + i)
-                    time.sleep(30)
+                    time.sleep(60)
 
                 except ResourceExhausted:
                     print("Google API request limit reached. Please try again later.")
@@ -244,7 +255,7 @@ class ResumeGenerator:
             }
 
             # Read the HTML template from a file
-            html_template = self.create_template(data)
+            html_template = self.create_template(personal_data)
 
             # Fill the template with data and print the result
             filled_html = self.fill_template(html_template, data_eng)
@@ -260,13 +271,15 @@ class ResumeGenerator:
         """
         Main function to handle resume generation based on the selected language.
         """
-        personal_pt = self.get_data('data/data-pt.json')
-        personal_eng = self.get_data('data/data-eng.json')
+        personal_pt = self.get_data('data/data-pt.json')  # Pass the file path
+        personal_eng = self.get_data('data/data-eng.json')  # Pass the file path
 
         if self.language == "pt":
-            return self.create_resume(personal_pt)  # Pass the file path
+            self.create_resume(personal_pt)
+            return
         elif self.language == "eng":
-            return self.create_resume(personal_eng)  # Pass the file path
+            self.create_resume(personal_eng)
+            return
         else:
             return print("Invalid language")
 
