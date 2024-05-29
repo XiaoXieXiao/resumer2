@@ -18,7 +18,7 @@ resumer2 is a Python-based tool for generating resumes in either Portuguese or E
 
 1. Clone the repository:
     ```bash
-    git clone https://github.com/XiaoXieXiao/resumer2.git
+    git clone https://github.com/estevamgd/resumer2.git
     ```
 2. Navigate to the project directory:
     ```bash
